@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gentle Alarm</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <div class="eyebrow">GENTLE ALARM</div>
+      <h1>Take a little break.</h1>
+      <p class="subtitle">Set a countdown and you’ll hear a soft chime when it’s done.</p>
+
+      <section id="setup-view">
+        <div class="time-fields">
+          <label>
+            <span>Hours</span>
+            <input id="hours" type="number" min="0" max="999" value="0" inputmode="numeric">
+          </label>
+          <span class="colon">:</span>
+          <label>
+            <span>Minutes</span>
+            <input id="minutes" type="number" min="0" max="59" value="0" inputmode="numeric">
+          </label>
+          <span class="colon">:</span>
+          <label>
+            <span>Seconds</span>
+            <input id="seconds" type="number" min="0" max="59" value="5" inputmode="numeric">
+          </label>
+        </div>
+        <label class="repeat-option">
+          <input id="repeat" type="checkbox">
+          <span>Repeat alarm</span>
+        </label>
+        <button id="start" type="button">Start timer</button>
+        <p id="error" class="error" role="alert"></p>
+      </section>
+
+      <section id="running-view" class="hidden">
+        <p id="elapsed" class="elapsed hidden" aria-live="polite"></p>
+        <div id="countdown" class="countdown" aria-live="polite">00:00:00</div>
+        <p id="status" class="status">Your timer is running.</p>
+        <button id="cancel" class="secondary" type="button">Cancel timer</button>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
