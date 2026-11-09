@@ -1,9 +1,19 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Gentle Alarm",
   "version": "1.0.0",
   "description": "A simple alarm with a gentle chime and alert window.",
-  "browser_action": {
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "@gentle_alarm",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  },
+  "action": {
     "default_title": "Alarm",
     "default_popup": "popup.html",
     "default_icon": "alarm_bell_icon.png"
@@ -11,8 +21,7 @@
   "background": {
     "scripts": [
       "background.js"
-    ],
-    "persistent": true
+    ]
   },
   "permissions": [
     "alarms"
