@@ -4,6 +4,8 @@ const minutesInput = document.getElementById("minutes");
 const secondsInput = document.getElementById("seconds");
 const hoursInput = document.getElementById("hours");
 const repeatInput = document.getElementById("repeat");
+const visualNotificationInput = document.getElementById("visual-notification");
+const chimeInput = document.getElementById("chime");
 const countdown = document.getElementById("countdown");
 const elapsed = document.getElementById("elapsed");
 const status = document.getElementById("status");
@@ -13,6 +15,44 @@ let durationMs = null;
 let startTime = null;
 let repeating = false;
 let intervalId = null;
+
+try {
+  visualNotificationInput.checked = window.localStorage.getItem("showVisualNotification") !== "false";
+  visualNotificationInput.disabled = false;
+} catch (loadError) {
+  console.error("Could not load the visual alert setting.", loadError);
+  error.textContent = "Could not load the visual alert setting.";
+}
+
+visualNotificationInput.addEventListener("change", () => {
+  try {
+    window.localStorage.setItem("showVisualNotification", String(visualNotificationInput.checked));
+    error.textContent = "";
+  } catch (saveError) {
+    console.error("Could not save the visual alert setting.", saveError);
+    visualNotificationInput.checked = !visualNotificationInput.checked;
+    error.textContent = "Could not save the visual alert setting.";
+  }
+});
+
+try {
+  chimeInput.checked = window.localStorage.getItem("playChime") !== "false";
+  chimeInput.disabled = false;
+} catch (loadError) {
+  console.error("Could not load the chime setting.", loadError);
+  error.textContent = "Could not load the chime setting.";
+}
+
+chimeInput.addEventListener("change", () => {
+  try {
+    window.localStorage.setItem("playChime", String(chimeInput.checked));
+    error.textContent = "";
+  } catch (saveError) {
+    console.error("Could not save the chime setting.", saveError);
+    chimeInput.checked = !chimeInput.checked;
+    error.textContent = "Could not save the chime setting.";
+  }
+});
 
 function formatTime(milliseconds) {
   const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));

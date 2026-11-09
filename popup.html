@@ -11,6 +11,17 @@
       <div class="eyebrow">GENTLE ALARM</div>
       <h1>Take a little break.</h1>
       <p class="subtitle">Set a countdown and you’ll hear a soft chime when it’s done.</p>
+      <div class="notification-options">
+        <label class="repeat-option">
+          <input id="visual-notification" type="checkbox" checked disabled>
+          <span>Visual alert</span>
+        </label>
+        <label class="repeat-option">
+          <input id="chime" type="checkbox" checked disabled>
+          <span>Play chime</span>
+        </label>
+      </div>
+      <p id="error" class="error" role="alert"></p>
 
       <section id="setup-view">
         <div class="time-fields">
@@ -34,7 +45,6 @@
           <span>Repeat alarm</span>
         </label>
         <button id="start" type="button">Start timer</button>
-        <p id="error" class="error" role="alert"></p>
       </section>
 
       <section id="running-view" class="hidden">

@@ -1,6 +1,8 @@
 const ALARM_NAME = "countdown";
 const REPEATING_ALARM_NAME = "countdown-repeating";
 let repeatStartTime = null;
+let alarmWindowId = null;
+let alarmWindowTask = Promise.resolve();
 
 function getState() {
   return Promise.all([
@@ -54,15 +56,62 @@ function playGentleChime() {
   window.setTimeout(() => context.close(), 5000);
 }
 
+function createAlarmWindow() {
+  return browser.windows.create({
+    url: browser.runtime.getURL("alert.html"),
+    type: "popup",
+    width: 360,
+    height: 260,
+    focused: true
+  });
+}
+
+browser.windows.onRemoved.addListener(windowId => {
+  if (windowId === alarmWindowId) {
+    alarmWindowId = null;
+  }
+});
+
+function showAlarmWindow() {
+  alarmWindowTask = alarmWindowTask.then(() => {
+    if (alarmWindowId !== null) {
+      return browser.windows.update(alarmWindowId, { focused: true }).catch(error => {
+        console.error("Could not focus the existing alarm window.", error);
+        alarmWindowId = null;
+        return createAlarmWindow().then(alarmWindow => {
+          alarmWindowId = alarmWindow.id;
+        });
+      });
+    }
+
+    return createAlarmWindow().then(alarmWindow => {
+      alarmWindowId = alarmWindow.id;
+    });
+  }).catch(error => {
+    console.error("Could not open the alarm window.", error);
+  });
+  return alarmWindowTask;
+}
+
 browser.alarms.onAlarm.addListener(alarm => {
   if (alarm.name !== ALARM_NAME && alarm.name !== REPEATING_ALARM_NAME) {
     return;
   }
 
   try {
-    playGentleChime();
+    if (window.localStorage.getItem("showVisualNotification") !== "false") {
+      showAlarmWindow();
+    }
   } catch (error) {
-    console.error("Could not play the alarm sound.", error);
+    console.error("Could not load the visual alert setting.", error);
+  }
+
+  try {
+    if (window.localStorage.getItem("playChime") !== "false") {
+      playGentleChime();
+    }
+  } catch (error) {
+    console.error("Could not load the chime setting or play the alarm sound.", error);
   }
 });
 

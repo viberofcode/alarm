@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Gentle Alarm",
   "version": "1.0.0",
-  "description": "A simple alarm with a gentle chime.",
+  "description": "A simple alarm with a gentle chime and alert window.",
   "browser_action": {
     "default_title": "Alarm",
     "default_popup": "popup.html",

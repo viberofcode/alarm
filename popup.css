@@ -87,6 +87,36 @@ input:focus {
   cursor: pointer;
 }
 
+.notification-options {
+  display: flex;
+  gap: 8px;
+}
+
+.notification-options .repeat-option {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.notification-options .repeat-option span {
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.notification-options .repeat-option span::before {
+  flex: 0 0 34px;
+}
+
+.notification-options .repeat-option span::after {
+  left: 11px;
+}
+
+.notification-options .repeat-option input:checked + span::after {
+  left: 29px;
+}
+
 .repeat-option input {
   position: absolute;
   width: 1px;
