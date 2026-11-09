@@ -3,6 +3,30 @@ const REPEATING_ALARM_NAME = "countdown-repeating";
 let repeatStartTime = null;
 let alarmWindowId = null;
 let alarmWindowTask = Promise.resolve();
+let activeChime = null;
+
+function stopGentleChime() {
+  if (!activeChime) {
+    return;
+  }
+
+  const { context, oscillators } = activeChime;
+  oscillators.forEach(oscillator => {
+    try {
+      oscillator.stop();
+    } catch (error) {
+      // The oscillator may already have finished.
+    }
+  });
+
+  if (context && context.state !== "closed") {
+    context.close().catch(() => {
+      // The context may already be closed.
+    });
+  }
+
+  activeChime = null;
+}
 
 function getState() {
   return Promise.all([
@@ -23,6 +47,8 @@ function getState() {
 }
 
 function playGentleChime() {
+  stopGentleChime();
+
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   if (!AudioContext) {
     return;
@@ -34,6 +60,7 @@ function playGentleChime() {
     { frequency: 523.25, start: 0, duration: 1.2 },
     { frequency: 659.25, start: 0.18, duration: 1.35 }
   ];
+  const oscillators = [];
 
   for (let repetition = 0; repetition < 3; repetition += 1) {
     const repetitionStart = repetition * 1.4;
@@ -50,10 +77,16 @@ function playGentleChime() {
       gain.connect(context.destination);
       oscillator.start(now + noteStart);
       oscillator.stop(now + noteStart + duration);
+      oscillators.push(oscillator);
     });
   }
 
-  window.setTimeout(() => context.close(), 5000);
+  activeChime = { context, oscillators };
+  window.setTimeout(() => {
+    if (activeChime && activeChime.context === context) {
+      stopGentleChime();
+    }
+  }, 5000);
 }
 
 function createAlarmWindow() {
@@ -69,6 +102,7 @@ function createAlarmWindow() {
 browser.windows.onRemoved.addListener(windowId => {
   if (windowId === alarmWindowId) {
     alarmWindowId = null;
+    stopGentleChime();
   }
 });
 
@@ -146,6 +180,11 @@ browser.runtime.onMessage.addListener(message => {
     ]).then(() => {
       repeatStartTime = null;
     });
+  }
+
+  if (message.type === "stopChime") {
+    stopGentleChime();
+    return Promise.resolve();
   }
 
   if (message.type === "getState") {
