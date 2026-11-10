@@ -1,9 +1,24 @@
 const ALARM_NAME = "countdown";
 const REPEATING_ALARM_NAME = "countdown-repeating";
-let repeatStartTime = null;
+const REPEATING_ALARM_PREFIX = `${REPEATING_ALARM_NAME}-`;
 let alarmWindowId = null;
 let alarmWindowTask = Promise.resolve();
 let activeChime = null;
+
+function isRepeatingAlarm(alarm) {
+  return alarm.name === REPEATING_ALARM_NAME ||
+    alarm.name.startsWith(REPEATING_ALARM_PREFIX);
+}
+
+function getRepeatingAlarms() {
+  return browser.alarms.getAll().then(alarms => alarms.filter(isRepeatingAlarm));
+}
+
+function clearRepeatingAlarms() {
+  return getRepeatingAlarms().then(alarms =>
+    Promise.all(alarms.map(alarm => browser.alarms.clear(alarm.name)))
+  );
+}
 
 function stopGentleChime() {
   if (!activeChime) {
@@ -31,17 +46,24 @@ function stopGentleChime() {
 function getState() {
   return Promise.all([
     browser.alarms.get(ALARM_NAME),
-    browser.alarms.get(REPEATING_ALARM_NAME)
-  ]).then(([alarm, repeatingAlarm]) => {
+    getRepeatingAlarms()
+  ]).then(([alarm, repeatingAlarms]) => {
+    const repeatingAlarm = repeatingAlarms[0];
     const activeAlarm = alarm || repeatingAlarm;
     const durationMs = repeatingAlarm ? repeatingAlarm.periodInMinutes * 60000 : null;
+    const alarmStartTime = repeatingAlarm && repeatingAlarm.name.startsWith(REPEATING_ALARM_PREFIX)
+      ? Number(repeatingAlarm.name.slice(REPEATING_ALARM_PREFIX.length))
+      : null;
+    const startTime = repeatingAlarm
+      ? (Number.isFinite(alarmStartTime)
+        ? alarmStartTime
+        : repeatingAlarm.scheduledTime - durationMs)
+      : null;
     return {
       endTime: activeAlarm ? activeAlarm.scheduledTime : null,
       durationMs,
       repeating: Boolean(repeatingAlarm),
-      startTime: repeatingAlarm
-        ? (repeatStartTime || repeatingAlarm.scheduledTime - durationMs)
-        : null
+      startTime
     };
   });
 }
@@ -128,7 +150,7 @@ function showAlarmWindow() {
 }
 
 browser.alarms.onAlarm.addListener(alarm => {
-  if (alarm.name !== ALARM_NAME && alarm.name !== REPEATING_ALARM_NAME) {
+  if (alarm.name !== ALARM_NAME && !isRepeatingAlarm(alarm)) {
     return;
   }
 
@@ -153,7 +175,9 @@ browser.runtime.onMessage.addListener(message => {
   if (message.type === "start") {
     const startTime = Date.now();
     const endTime = startTime + message.durationMs;
-    const alarmName = message.repeating ? REPEATING_ALARM_NAME : ALARM_NAME;
+    const alarmName = message.repeating
+      ? `${REPEATING_ALARM_PREFIX}${startTime}`
+      : ALARM_NAME;
     const alarmOptions = { when: endTime };
     if (message.repeating) {
       alarmOptions.periodInMinutes = message.durationMs / 60000;
@@ -161,14 +185,13 @@ browser.runtime.onMessage.addListener(message => {
 
     return Promise.all([
       browser.alarms.clear(ALARM_NAME),
-      browser.alarms.clear(REPEATING_ALARM_NAME)
+      clearRepeatingAlarms()
     ]).then(() => browser.alarms.create(alarmName, alarmOptions)).then(() => {
-      repeatStartTime = message.repeating ? startTime : null;
       return {
         endTime,
         durationMs: message.durationMs,
         repeating: message.repeating,
-        startTime: repeatStartTime
+        startTime: message.repeating ? startTime : null
       };
     });
   }
@@ -176,10 +199,8 @@ browser.runtime.onMessage.addListener(message => {
   if (message.type === "cancel") {
     return Promise.all([
       browser.alarms.clear(ALARM_NAME),
-      browser.alarms.clear(REPEATING_ALARM_NAME)
-    ]).then(() => {
-      repeatStartTime = null;
-    });
+      clearRepeatingAlarms()
+    ]);
   }
 
   if (message.type === "stopChime") {
