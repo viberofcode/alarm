@@ -1,0 +1,5 @@
+# Ignore zip archives
+*.zip
+
+# Ignore macOS system files
+.DS_Store
